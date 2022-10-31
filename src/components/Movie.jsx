@@ -1,8 +1,37 @@
+import { doc, arrayUnion, updateDoc } from "firebase/firestore";
 import React, { useState } from "react";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { UserAuth } from "../context/AuthContext";
+import { db } from "../firebase";
 
 const Movie = ({ item }) => {
   const [like, setLike] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const navigate = useNavigate();
+
+  const { user } = UserAuth();
+
+  const movieID = doc(db, "user", `${user?.email}`);
+
+  const saveShow = async () => {
+    if (user?.email) {
+      setLike(!like);
+      setSaved(true);
+      await updateDoc(movieID, {
+        savedMovies: arrayUnion({
+          id: item.id,
+          title: item.title,
+          img: item.backdrop_path,
+        }),
+      });
+    } else {
+      alert("Please log in first to save your movies");
+      navigate("/login");
+    }
+  };
+
   return (
     <>
       <div className="w-[160px] sm:w-[200px] md:w-[240px] lg:w-[280px] inline-block cursor-pointer relative p-2">
@@ -15,11 +44,13 @@ const Movie = ({ item }) => {
           <p className="white-space-normal text-xs md:text-sm font-bold flex justify-center items-center h-full text-left">
             {item?.title}
           </p>
-          {like ? (
-            <FaHeart className="absolute top-4 left-4 text-gray-400" />
-          ) : (
-            <FaRegHeart className="absolute top-4 left-4 text-gray-400" />
-          )}
+          <p onClick={saveShow}>
+            {like ? (
+              <FaHeart className="absolute top-4 left-4 text-gray-400" />
+            ) : (
+              <FaRegHeart className="absolute top-4 left-4 text-gray-400" />
+            )}
+          </p>
         </div>
       </div>
     </>
